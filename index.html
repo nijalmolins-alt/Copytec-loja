@@ -42,17 +42,77 @@ let items=[...demoItems];let active='Todos',cart=JSON.parse(localStorage.getItem
 function money(v){if(v==null||v==='')return 'Consulte no WhatsApp';const n=Number(v);return Number.isFinite(n)?n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Consulte no WhatsApp'}
 function renderCats(){$('categories').innerHTML=cats.map(c=>`<button class="cat ${c===active?'active':''}" data-cat="${c}">${c}</button>`).join('');document.querySelectorAll('[data-cat]').forEach(b=>b.onclick=()=>{active=b.dataset.cat;renderCats();renderProducts()})}
 function esc(v){return String(v??'').replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[c]))}
-function normalizeSearch(value){return String(value??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim()}
-function renderProducts(){const q=normalizeSearch($('search').value);const filtered=items.filter(x=>{const category=String(x.category??x.categoria??'');const name=String(x.name??x.title??x.product_name??x.nome??'');const desc=String(x.desc??x.description??x.descricao??'');const searchable=normalizeSearch([name,category,desc].join(' '));return (active==='Todos'||category===active)&&searchable.includes(q)});$('products').innerHTML=filtered.map(x=>{const desc=x.desc||x.description||'';const visual=x.image_url?`<img src="${esc(x.image_url)}" alt="${esc(x.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`:esc(x.icon||'🛍️');const out=x.stock!==null&&x.stock!==undefined&&Number(x.stock)<=0;return `<article class="product"><div class="prod-visual" aria-hidden="true">${visual}</div><div class="prod-body"><span class="prod-tag">${esc(x.category)}</span><h3>${esc(x.name)}</h3><p>${esc(desc)}</p><div class="price">${money(x.price)}${x.price==null?'<br><small>Preço a confirmar</small>':''}${x.stock!==null&&x.stock!==undefined?`<br><small>${out?'Indisponível':`Estoque: ${Number(x.stock)}`}</small>`:''}</div><button class="add" data-add="${esc(x.id)}" ${out?'disabled style="opacity:.45;cursor:not-allowed"':''}>${out?'Sem estoque':'＋ Adicionar à sacola'}</button></div></article>`}).join('')||'<p class="empty">Nenhum produto encontrado. Tente outra busca.</p>';document.querySelectorAll('[data-add]').forEach(b=>b.onclick=()=>add(+b.dataset.add))}
-async function loadSharedCatalog(){const url=window.COPYTEC_SUPABASE_URL,key=window.COPYTEC_SUPABASE_ANON_KEY;if(!window.supabase||!url||!key||url.includes('SEU-PROJETO')||key.includes('SUA-CHAVE'))return;try{const client=window.supabase.createClient(url,key);const {data,error}=await client.from('products').select('*').eq('active',true).order('id');if(error){console.warn('Catálogo online indisponível; usando catálogo inicial.',error.message);return}if(Array.isArray(data)){items=data.map(x=>({...x,name:x.name??x.title??x.product_name??x.nome??'Produto',category:x.category??x.categoria??'Outros',price:x.price??x.preco??null,desc:x.description??x.desc??x.descricao??'',icon:x.icon||'🛍️'}));cats=['Todos',...new Set(items.map(x=>x.category))];if(cart && Object.keys(cart).length){const valid=new Set(items.map(x=>String(x.id)));Object.keys(cart).forEach(id=>{if(!valid.has(String(id)))delete cart[id]})}persist();renderCats();renderProducts()}}catch(e){console.warn('Não foi possível carregar catálogo online.',e)}}
-function persist(){localStorage.setItem('copytec_cart',JSON.stringify(cart));updateCounts()}
-function add(id){cart[id]=(cart[id]||0)+1;persist();toast('Produto adicionado à sacola!')}
-function updateCounts(){const n=Object.values(cart).reduce((a,b)=>a+b,0);['navCount','floatCount'].forEach(id=>$(id).textContent=n)}
-function cartHtml(){const entries=items.filter(x=>cart[x.id]);if(!entries.length){$('cartContents').innerHTML='<div class="empty">Sua sacola está vazia.<br>Escolha algum produto para continuar.</div>'; $('checkoutFields').hidden=true;return} $('checkoutFields').hidden=false;$('cartContents').innerHTML='<div class="cart-list">'+entries.map(x=>`<div class="cart-item"><div><b>${x.name}</b><small>${money(x.price)}</small></div><div class="qty"><button data-qty="${x.id}" data-delta="-1" aria-label="Diminuir">−</button><b>${cart[x.id]}</b><button data-qty="${x.id}" data-delta="1" aria-label="Aumentar">+</button></div></div>`).join('')+'</div><div class="total"><span>Total estimado</span><span>Consultar</span></div><p class="fine">Os preços dos itens ainda serão confirmados pela loja. Frete não incluído.</p>';document.querySelectorAll('[data-qty]').forEach(b=>b.onclick=()=>{const id=+b.dataset.qty;cart[id]=(cart[id]||0)+(+b.dataset.delta);if(cart[id]<=0)delete cart[id];persist();cartHtml()})}
-function openCart(){cartHtml();$('cartModal').classList.add('open');document.body.style.overflow='hidden'}function closeCart(){$('cartModal').classList.remove('open');document.body.style.overflow=''}
-function sendOrder(){const entries=items.filter(x=>cart[x.id]);if(!entries.length){toast('Adicione um produto primeiro.');return}const name=$('customerName').value.trim();if(!name){$('customerName').focus();toast('Informe seu nome para continuar.');return}const fulfillment=$('fulfillment').value;const address=$('customerAddress').value.trim();if(fulfillment.startsWith('Entrega')&&!address){$('customerAddress').focus();toast('Informe o endereço para entrega.');return}let msg=`Olá, Copytec! Quero fazer este pedido pelo catálogo online.\n\nNome: ${name}\nRecebimento: ${fulfillment}`;if(fulfillment.startsWith('Entrega'))msg+=`\nEndereço: ${address}`;msg+=`\nPreferência de pagamento: ${$('payment').value}\n`;if($('payment').value.startsWith('Cartão por link'))msg+='Solicito que a Copytec gere e envie o link de pagamento SumUp deste pedido pelo WhatsApp.\n';if($('payment').value.startsWith('Pix'))msg+='Chave Pix informada no site: 69de7e6f-5486-43be-a4be-ddc620bb5ebb. Vou confirmar os dados do recebedor antes de pagar.\n';msg+='\nProdutos:\n'+entries.map(x=>`• ${cart[x.id]}x ${x.name} — preço a confirmar`).join('\n');msg+='\n\nTotal e disponibilidade: confirmar com a loja.';if($('notes').value.trim())msg+='\nObservações: '+$('notes').value.trim();msg+='\n\nEnviado pelo catálogo online da Copytec.';window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`,'_blank','noopener');}
-function askService(msg){window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent('Olá, Copytec! '+msg)}`,'_blank','noopener')}
-let toastTimer;function toast(msg){$('toast').textContent=msg;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2200)}
-$('search').addEventListener('input',renderProducts);$('openCart').onclick=openCart;$('floatCart').onclick=openCart;$('closeCart').onclick=closeCart;$('cartModal').addEventListener('click',e=>{if(e.target===$('cartModal'))closeCart()});$('sendOrder').onclick=sendOrder;$('fulfillment').onchange=()=>{$('addressField').hidden=$('fulfillment').value==='Retirada na loja'};$('payment').onchange=()=>{$('pixPanel').classList.toggle('show',$('payment').value.startsWith('Pix'))};$('pixPanel').classList.toggle('show',$('payment').value.startsWith('Pix'));$('copyPix').onclick=async()=>{try{await navigator.clipboard.writeText($('pixKeyText').textContent);toast('Chave Pix copiada!')}catch(e){const range=document.createRange();range.selectNodeContents($('pixKeyText'));const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);toast('Selecione e copie a chave Pix.')}};$('year').textContent=new Date().getFullYear();renderCats();renderProducts();updateCounts();loadSharedCatalog();if('serviceWorker'in navigator&&location.protocol.startsWith('http'))window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
-</script>
+
+function normalizeSearch(value) {
+  return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('pt-BR')
+    .trim();
+}
+
+function renderProducts() {
+  const campoBusca = document.getElementById('search');
+  const termo = normalizeSearch(campoBusca ? campoBusca.value : '');
+
+  const filtrados = items.filter(function (produto) {
+    const categoria = String(produto.category ?? '');
+    const categoriaAtiva =
+      active === 'Todos' ||
+      normalizeSearch(categoria) === normalizeSearch(active);
+
+    const campos = [
+      produto.name,
+      produto.category,
+      produto.subcategory,
+      produto.brand,
+      produto.model,
+      produto.compatibility,
+      produto.desc,
+      produto.description,
+      produto.sku,
+      produto.code
+    ];
+
+    const textoProduto = normalizeSearch(
+      campos.map(function (campo) {
+        return String(campo ?? '');
+      }).join(' ')
+    );
+
+    return categoriaAtiva && textoProduto.includes(termo);
+  });
+
+  const areaProdutos = document.getElementById('products');
+
+  areaProdutos.innerHTML = filtrados.map(function (produto) {
+    const descricao = produto.desc || produto.description || '';
+    const imagem = produto.image_url
+      ? `<img src="${esc(produto.image_url)}" alt="${esc(produto.name)}" loading="lazy" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0">`
+      : esc(produto.icon || '🛍️');
+
+    const semEstoque =
+      produto.stock !== null &&
+      produto.stock !== undefined &&
+      Number(produto.stock) <= 0;
+
+    return `<article class="product">
+      <div class="prod-visual" aria-hidden="true">${imagem}</div>
+      <div class="prod-body">
+        <span class="prod-tag">${esc(produto.category || 'Produtos')}</span>
+        <h3>${esc(produto.name)}</h3>
+        <p>${esc(descricao)}</p>
+        <div class="price">${money(produto.price)}${produto.price == null ? '<br><small>Preço a confirmar</small>' : ''}${produto.stock !== null && produto.stock !== undefined ? `<br><small>${semEstoque ? 'Indisponível' : 'Estoque: ' + Number(produto.stock)}</small>` : ''}</div>
+        <button class="add" data-add="${esc(produto.id)}" ${semEstoque ? 'disabled style="opacity:.45;cursor:not-allowed"' : ''}>${semEstoque ? 'Sem estoque' : '＋ Adicionar à sacola'}</button>
+      </div>
+    </article>`;
+  }).join('') || '<p class="empty">Nenhum produto encontrado. Tente outra busca.</p>';
+
+  document.querySelectorAll('[data-add]').forEach(function (botao) {
+    botao.onclick = function () {
+      add(+botao.dataset.add);
+    };
+  });
+}
+
 </body></html>
