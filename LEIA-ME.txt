@@ -24,3 +24,7 @@ LIMITAÇÕES IMPORTANTES
 - Para atualizar produtos e textos, edite index.html (a lista “items” no JavaScript e o conteúdo do HTML).
 - Hospedagem gratuita é oferecida por terceiros e está sujeita às regras deles. Domínio próprio não está incluído; o endereço gratuito do provedor pode ser usado.
 - Não inserir dados sensíveis de clientes no site. Esta versão não possui backend nem área administrativa segura.
+
+
+PAINEL ADMINISTRATIVO ONLINE
+Veja CONFIGURAR-PAINEL.txt e execute supabase-setup.sql após criar seu projeto Supabase. O painel ainda precisa da configuração da URL e chave pública em config.js.

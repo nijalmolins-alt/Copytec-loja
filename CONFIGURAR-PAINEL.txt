@@ -1,0 +1,31 @@
+COPYTEC — PAINEL ADMINISTRATIVO ONLINE (VERSÃO DE CONFIGURAÇÃO)
+
+Arquivos:
+- index.html: loja pública; tenta buscar o catálogo compartilhado no Supabase.
+- admin.html: painel para entrar, criar/editar/excluir produtos e enviar fotos.
+- config.js: você preencherá a URL e a chave pública do Supabase.
+- supabase-setup.sql: tabelas, permissões de segurança, fotos e catálogo inicial.
+- assets/: artes e ícones da Copytec.
+
+Atenção: este pacote é a versão preparada para conectar. Ela NÃO fica compartilhada até configurar o Supabase e publicar os arquivos atualizados no GitHub Pages.
+
+CONFIGURAÇÃO RESUMIDA
+1. Crie uma conta gratuita em https://supabase.com/ e crie um projeto (a senha do banco é sua; não a compartilhe).
+2. No Supabase, abra SQL Editor > New query. Copie todo o arquivo supabase-setup.sql e execute uma vez.
+3. Em Authentication > Users, adicione um usuário com seu e-mail e defina uma senha forte. Se o painel pedir confirmação de e-mail, confirme conforme as opções da conta.
+4. Copie o UUID desse usuário na lista Authentication > Users. No SQL Editor, execute: insert into public.admins (user_id) values ('UUID-DO-SEU-USUARIO'); substituindo pelo UUID real. Não deixe aspas de exemplo.
+5. Em Project Settings > API (ou Connect), copie Project URL e a chave publishable (ou a antiga anon key). Nunca copie a secret/service_role key.
+6. Abra config.js e substitua os valores vazios pelas credenciais públicas do seu projeto, por exemplo:
+   window.COPYTEC_SUPABASE_URL = 'https://SEU-PROJETO.supabase.co';
+   window.COPYTEC_SUPABASE_ANON_KEY = 'SUA-CHAVE-PUBLICA';
+7. Envie TODOS os arquivos desta pasta para a raiz do repositório GitHub Copytec-loja, substituindo o index.html anterior e acrescentando admin.html, config.js e supabase-setup.sql. Mantenha a pasta assets e os arquivos manifest.webmanifest e sw.js.
+8. Depois que GitHub Pages atualizar, abra https://nijalmolins-alt.github.io/Copytec-loja/admin.html, entre com o e-mail e senha que criou, e cadastre/edite produtos.
+9. Teste a loja pública em janela anônima. Adicione um produto, altere preço/estoque e confira se a mudança aparece no catálogo.
+
+SEGURANÇA
+- Nunca coloque service_role/secret key em config.js, GitHub ou mensagens.
+- Só o usuário cujo UUID foi adicionado à tabela public.admins pode administrar produtos e fotos.
+- Os visitantes podem ler apenas produtos ativos; não podem editar produtos.
+- Produtos sem preço mostram “Consulte no WhatsApp”; estoque vazio significa “a confirmar”; estoque 0 torna o item indisponível.
+- O plano gratuito Supabase pode pausar projetos inativos; verifique o estado do projeto se o catálogo deixar de carregar.
+- Antes de executar SQL novamente, tenha cuidado: as políticas com nomes iguais podem dar erro por já existirem. Execute o arquivo completo apenas uma vez em projeto novo.
