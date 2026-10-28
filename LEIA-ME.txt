@@ -1,0 +1,26 @@
+COPYTEC — LOJA VIRTUAL GRATUITA (PRIMEIRA VERSÃO)
+
+ARQUIVOS
+- index.html: loja virtual responsiva, catálogo, sacola e pedido pelo WhatsApp.
+- manifest.webmanifest + sw.js: suporte básico a instalação PWA e cache offline.
+- assets/: artes de marca e ícone.
+
+TESTE LOCAL
+Abra index.html em um navegador moderno. O carrinho funciona localmente e os pedidos são preparados para o WhatsApp +55 81 97304-5047. Para testar PWA/service worker, é necessário servir os arquivos por HTTPS ou localhost; abrir o arquivo diretamente não ativa o service worker.
+
+PUBLICAR GRATUITAMENTE (OPÇÃO: GITHUB PAGES)
+1. Crie uma conta gratuita em https://github.com/ se ainda não tiver.
+2. Crie um repositório público chamado copytec-loja.
+3. Envie o conteúdo desta pasta para a raiz do repositório (index.html deve ficar na raiz).
+4. No repositório, abra Settings > Pages.
+5. Em Build and deployment, selecione Deploy from a branch; escolha main e /(root), depois Save.
+6. Aguarde o GitHub gerar o endereço público, normalmente https://SEU-USUARIO.github.io/copytec-loja/.
+7. Abra o link no celular e teste busca, sacola, endereço e envio de pedido.
+
+LIMITAÇÕES IMPORTANTES
+- Esta é uma loja-catálogo de demonstração inicial; os produtos listados foram baseados nas artes e serviços mencionados, sem preços confirmados. Os valores aparecem como “Consulte no WhatsApp”.
+- O carrinho é salvo somente no navegador do cliente. Não existe banco de dados, estoque sincronizado nem painel administrativo online nesta versão.
+- Pedidos são enviados pelo WhatsApp e só ficam registrados na conversa. O site não cobra pagamentos nem confirma automaticamente o pedido.
+- Para atualizar produtos e textos, edite index.html (a lista “items” no JavaScript e o conteúdo do HTML).
+- Hospedagem gratuita é oferecida por terceiros e está sujeita às regras deles. Domínio próprio não está incluído; o endereço gratuito do provedor pode ser usado.
+- Não inserir dados sensíveis de clientes no site. Esta versão não possui backend nem área administrativa segura.
